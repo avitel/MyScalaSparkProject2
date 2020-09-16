@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<workflow-app xmlns="uri:oozie:workflow:0.4" name="sparkETL">
+    <global>
+        <configuration>
+            <property>
+                <name>mapred.job.queue.name</name>
+                <value>${queueName}</value>
+            </property>
+            <property>
+                <name>oozie.launcher.mapreduce.job.queuename</name>
+                <value>${launcherQueueName}</value>
+            </property>
+            <property>
+                <name>oozie.action.max.output.data</name>
+                <value>70000</value>
+            </property>
+            <property>
+                <name>jdbcDriver</name>
+                <value>oracle.jdbc.OracleDriver</value>
+            </property>
+            <property>
+                <name>sourceUrl</name>
+                <value>jdbc:oracle:thin:@myhost:1521:smartvdm</value>
+            </property>
+            <property>
+                <name>sourceUser</name>
+                <value>DC_QA</value>
+            </property>
+            <property>
+                <name>jceksPathQa</name>
+                <value>jceks://hdfs@myhost:8020/jceks/myproject.jceks</value>
+            </property>
+            <property>
+                <name>passwordAliasQa</name>
+                <value>myproject</value>
+            </property>
+            <property>
+                <name>sourceSchema</name>
+                <value>Schema</value>
+            </property>
+            <property>
+                <name>replicaSchema</name>
+                <value>schema</value>
+            </property>
+        </configuration>
+    </global>
+
+    <start to="waiting_for_launch"/>
+
+    <action name="waiting_for_launch">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>/oozie-app/wf/app/dataqa/v${pkd_version}/confs/PKDwaiting.sh</exec>
+            <argument>myproject</argument>
+            <argument>http://myhost:8888</argument>
+            <argument>05:00:00</argument>
+            <file>/oozie-app/wf/app/dataqa/v${pkd_version}/confs/PKDwaiting.sh</file>
+        </shell>
+        <ok to="createPdkPartition"/>
+        <error to="kill"/>
+    </action>
+
+    <action name="createPdkPartition">
+        <sub-workflow>
+            <app-path>/oozie-app/wf/app/dataqa/v${pkd_version}/sv/createPkdPartition.xml</app-path>
+            <propagate-configuration/>
+        </sub-workflow>
+        <ok to="CURR_TRANS"/>
+        <error to="kill"/>
+    </action>
+
+    <action name="CURR_TRANS">
+        <sub-workflow>
+            <app-path>/oozie-app/wf/app/dataqa/v${pkd_version}/sv/compareTable.xml</app-path>
+            <propagate-configuration/>
+            <configuration>
+                <property>
+                    <name>sourceTable</name>
+                    <value>mytable</value>
+                </property>
+                <property>
+                    <name>replicaTable</name>
+                    <value>mytable</value>
+                </property>
+                <property>
+                    <name>primaryKeys</name>
+                    <value>NODE_ID,UTRNNO,REVERSAL</value>
+                </property>
+                <property>
+                    <name>excludedColumns</name>
+                    <value>AUD_SRC_UDATE,AUD_SRC_CDATE,AUD_CDATE,AUD_DST_UDATE,RJCTRTN,CDHLDR_POSTAL_CODE,ORA_ROWSCN</value>
+                </property>
+                <property>
+                    <name>replicaReader</name>
+                    <value>PartitionedReplicaReader2</value>
+                </property>
+                <property>
+                    <name>replicaPartitionDivider</name>
+                    <value>16777216</value>
+                </property>
+                <property>
+                    <name>summaryGenerator</name>
+                    <value>StepSummaryGenerator</value>
+                </property>
+                <property>
+                    <name>ctlQaEntityId</name>
+                    <value>73510011</value>
+                </property>
+                <property>
+                    <name>samplePercent</name>
+                    <value>0.03</value>
+                </property>
+            </configuration>
+        </sub-workflow>
+        <ok to="errorCheck"/>
+        <error to="errorCheck"/>
+    </action>
+
+    <decision name="errorCheck">
+        <switch>
+            <case to="kill">${not empty wf:lastErrorNode()}</case>
+            <default to="end"/>
+        </switch>
+    </decision>
+
+    <kill name="kill">
+        <message>error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+
+    <end name="end"/>
+
+</workflow-app>

@@ -1,0 +1,150 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<modelVersion>4.0.0</modelVersion>
+
+<groupId>org.example</groupId>
+<artifactId>MyScalaSparkProject</artifactId>
+<version>1.0-SNAPSHOT</version>
+
+<properties>
+    <mainClass>SmApp</mainClass>
+    <assembly.skipAssembly>false</assembly.skipAssembly>
+    <java.version>1.8</java.version>
+    <junit.version>4.12</junit.version>
+    <jodatime.version>2.9.4</jodatime.version>
+    <jsch.version>0.1.53</jsch.version>
+    <commons-cli.version>1.3.1</commons-cli.version>
+    <args4j.version>2.33</args4j.version>
+    <avro.version>1.8.1</avro.version>
+    <opencsv.version>3.8</opencsv.version>
+    <ojdbc.version>12.1.0.2</ojdbc.version>
+    <msjdbc.version>6.2.0.jre8</msjdbc.version>
+    <groovy.version>2.4.15</groovy.version>
+    <org.springframework.version>4.3.24.RELEASE</org.springframework.version>
+
+    <cloudera.distr.version>2.2.1</cloudera.distr.version>
+    <spark.scala.version>2.11</spark.scala.version>
+    <scala.version>2.11.0</scala.version>
+
+    <hadoop.version>2.6.0</hadoop.version>
+    <apache.poi.version>3.15</apache.poi.version>
+    <apache.io.version>1.3.2</apache.io.version>
+    <apache.httpcomponents.version>4.5.3</apache.httpcomponents.version>
+    <jetbrains.annotations.version>15.0</jetbrains.annotations.version>
+    <apache.xmlbeans.version>2.6.0</apache.xmlbeans.version>
+    <jackson.version>2.9.4</jackson.version>
+</properties>
+
+
+<build>
+    <sourceDirectory>src/main/scala</sourceDirectory>
+    <plugins>
+        <plugin>
+            <groupId>net.alchim31.maven</groupId>
+            <artifactId>scala-maven-plugin</artifactId>
+            <version>3.4.6</version>
+            <configuration>
+                <scalaVersion>${scala.version}</scalaVersion>
+            </configuration>
+            <executions>
+                <execution>
+                    <id>scala.compile</id>
+                    <phase>compile</phase>
+                    <goals>
+                        <goal>compile</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <version>3.0.1</version>
+            <configuration>
+                <archive>
+                    <manifest>
+                        <mainClass>SvApp</mainClass>`
+                    </manifest>
+                </archive>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+
+<dependencies>
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-jdbc</artifactId>
+        <version>4.3.11.RELEASE</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.scala-lang</groupId>
+        <artifactId>scala-library</artifactId>
+        <version>2.11.0</version>
+    </dependency>
+
+    <dependency>
+        <groupId>commons-dbutils</groupId>
+        <artifactId>commons-dbutils</artifactId>
+        <version>1.7</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpclient</artifactId>
+        <version>4.2.5</version>
+    </dependency>
+
+    <dependency>
+        <groupId>com.novocode</groupId>
+        <artifactId>junit-interface</artifactId>
+        <version>0.11</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-all</artifactId>
+    </dependency>
+
+    <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-sql_${spark.scala.version}</artifactId>
+        <version>${cloudera.distr.version}</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-core_${spark.scala.version}</artifactId>
+        <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+        <groupId>com.oracle</groupId>
+        <artifactId>ojdbc7</artifactId>
+        <version>${ojdbc.version}</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.glassfish</groupId>
+        <artifactId>javax.json</artifactId>
+        <version>1.1.2</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-hive_${spark.scala.version}</artifactId>
+        <version>${cloudera.distr.version}</version>
+        <scope>provided</scope>
+
+        <exclusions>
+            <exclusion>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+            </exclusion>
+        </exclusions>
+    </dependency>
+
+</dependencies>
+
+</project>

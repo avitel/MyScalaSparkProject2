@@ -1,0 +1,50 @@
+<workflow-app xmlns='uri:oozie:workflow:0.4' name='sparkETL_loadingId_${loading_id}'>
+    <global>
+        <job-tracker>${jobTracker}</job-tracker>
+        <name-node>${nameNode}</name-node>
+        <configuration>
+            <property>
+                <name>mapred.job.queue.name</name>
+                <value>${queueName}</value>
+            </property>
+        </configuration>
+    </global>
+
+    <start to='spark-shell' />
+
+    <action name='spark-shell'>
+        <shell xmlns="uri:oozie:shell-action:0.2">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <configuration>
+                <property>
+                    <name>oozie.launcher.mapreduce.job.queuename</name>
+                    <value>${launcherQueueName}</value>
+                </property>
+                <property>
+                    <name>oozie.action.max.output.data</name>
+                    <value>70000</value>
+                </property>
+            </configuration>
+
+            <exec>sparkStarterLite.sh</exec>
+
+            <argument>${principal}</argument>
+            <argument>myproject.jar</argument>
+            <argument>logic.pkdStat.pkdPartitionMaker</argument>
+            <argument>${queueName}</argument>
+            <argument>${loading_id}</argument>
+
+            <file>${keytab}#stork.keytab</file>
+            <capture-output/>
+        </shell>
+
+        <ok to="end"/>
+        <error to="fail"/>
+    </action>
+
+    <kill name="fail">
+        <message>Spark Shell Action failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+    <end name="end"/>
+</workflow-app>

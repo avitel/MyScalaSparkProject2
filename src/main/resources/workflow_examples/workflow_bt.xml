@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<workflow-app xmlns="uri:oozie:workflow:0.4" name="sparkETL">
+    <global>
+        <configuration>
+            <property>
+                <name>mapred.job.queue.name</name>
+                <value>${queueName}</value>
+            </property>
+            <property>
+                <name>oozie.launcher.mapreduce.job.queuename</name>
+                <value>${launcherQueueName}</value>
+            </property>
+            <property>
+                <name>oozie.action.max.output.data</name>
+                <value>70000</value>
+            </property>
+            <property>
+                <name>jdbcDriver</name>
+                <value>oracle.jdbc.OracleDriver</value>
+            </property>
+            <property>
+                <name>sourceUrl</name>
+                <value>jdbc:oracle:thin:@myhost:1521:smartvdm</value>
+            </property>
+            <property>
+                <name>sourceUser</name>
+                <value>DC_QA</value>
+            </property>
+            <property>
+                <name>jceksPathQa</name>
+                <value>jceks://hdfs@myhost:8020/jceks/myproject.jceks</value>
+            </property>
+            <property>
+                <name>passwordAliasQa</name>
+                <value>mypass</value>
+            </property>
+            <property>
+                <name>sourceSchema</name>
+                <value>myschema</value>
+            </property>
+            <property>
+                <name>replicaSchema</name>
+                <value>myschema</value>
+            </property>
+        </configuration>
+    </global>
+
+    <start to="waiting_for_launch"/>
+
+    <action name="waiting_for_launch">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>/oozie-app/wf/app/dataqa/v${pkd_version}/confs/PKDwaiting.sh</exec>
+            <argument>myproject</argument>
+            <argument>http://myhost:8888</argument>
+            <argument>05:00:00</argument>
+            <file>/oozie-app/wf/app/dataqa/v${pkd_version}/confs/PKDwaiting.sh</file>
+        </shell>
+        <ok to="createPdkPartition"/>
+        <error to="kill"/>
+    </action>
+
+    <action name="createPdkPartition">
+        <sub-workflow>
+            <app-path>/oozie-app/wf/app/dataqa/v${pkd_version}/sv/createPkdPartition.xml</app-path>
+            <propagate-configuration/>
+        </sub-workflow>
+        <ok to="fork"/>
+        <error to="kill"/>
+    </action>
+
+    <fork name="fork">
+        <path start="T_SPLIT_TRANS"/>
+        <path start="POS_TRANS"/>
+        <path start="TRANS_STTL_TAB"/>
+    </fork>
+
+    <action name="T_SPLIT_TRANS">
+        <sub-workflow>
+            <app-path>/oozie-app/wf/app/dataqa/v${pkd_version}/sv/compareTable.xml</app-path>
+            <propagate-configuration/>
+            <configuration>
+                <property>
+                    <name>sourceTable</name>
+                    <value>T_SPLIT_TRANS</value>
+                </property>
+                <property>
+                    <name>replicaTable</name>
+                    <value>T_SPLIT_TRANS</value>
+                </property>
+                <property>
+                    <name>primaryKeys</name>
+                    <value>NODE_ID,UTRNNO</value>
+                </property>
+                <property>
+                    <name>excludedColumns</name>
+                    <value>RJCTRTN,SECINFO,CDHLDR_POSTAL_CODE,ORA_ROWSCN</value>
+                </property>
+                <property>
+                    <name>replicaReader</name>
+                    <value>SimpleReplicaReader</value>
+                </property>
+                <property>
+                    <name>replicaPartitionDivider</name>
+                    <value>1</value>
+                </property>
+                <property>
+                    <name>summaryGenerator</name>
+                    <value>StepSummaryGenerator</value>
+                </property>
+                <property>
+                    <name>ctlQaEntityId</name>
+                    <value>73510081</value>
+                </property>
+                <property>
+                    <name>samplePercent</name>
+                    <value>0.1</value>
+                </property>
+            </configuration>
+        </sub-workflow>
+        <ok to="TablesJoin"/>
+        <error to="TablesJoin"/>
+    </action>
+    <action name="POS_TRANS">
+        <sub-workflow>
+            <app-path>/oozie-app/wf/app/dataqa/v${pkd_version}/sv/compareTable.xml</app-path>
+            <propagate-configuration/>
+            <configuration>
+                <property>
+                    <name>sourceTable</name>
+                    <value>POS_TRANS</value>
+                </property>
+                <property>
+                    <name>replicaTable</name>
+                    <value>POS_TRANS</value>
+                </property>
+                <property>
+                    <name>primaryKeys</name>
+                    <value>NODE_ID,UTRNNO,REVERSAL</value>
+                </property>
+                <property>
+                    <name>excludedColumns</name>
+                    <value>RJCTRTN,SECINFO,CDHLDR_POSTAL_CODE,ORA_ROWSCN</value>
+                </property>
+                <property>
+                    <name>replicaReader</name>
+                    <value>SimpleReplicaReader</value>
+                </property>
+                <property>
+                    <name>replicaPartitionDivider</name>
+                    <value>1</value>
+                </property>
+                <property>
+                    <name>summaryGenerator</name>
+                    <value>StepSummaryGenerator</value>
+                </property>
+                <property>
+                    <name>ctlQaEntityId</name>
+                    <value>73510200</value>
+                </property>
+                <property>
+                    <name>samplePercent</name>
+                    <value>0.03</value>
+                </property>
+            </configuration>
+        </sub-workflow>
+        <ok to="TablesJoin"/>
+        <error to="TablesJoin"/>
+    </action>
+    <action name="TRANS_STTL_TAB">
+        <sub-workflow>
+            <app-path>/oozie-app/wf/app/dataqa/v${pkd_version}/sv/compareTable.xml</app-path>
+            <propagate-configuration/>
+            <configuration>
+                <property>
+                    <name>sourceTable</name>
+                    <value>TRANS_STTL_TAB</value>
+                </property>
+                <property>
+                    <name>replicaTable</name>
+                    <value>TRANS_STTL_TAB</value>
+                </property>
+                <property>
+                    <name>primaryKeys</name>
+                    <value>NODE_ID,UTRNNO,REVERSAL,INDICATOR,INST_TYPE</value>
+                </property>
+                <property>
+                    <name>excludedColumns</name>
+                    <value>RJCTRTN,SECINFO,CDHLDR_POSTAL_CODE,ORA_ROWSCN</value>
+                </property>
+                <property>
+                    <name>replicaReader</name>
+                    <value>PartitionedReplicaReader1</value>
+                </property>
+                <property>
+                    <name>replicaPartitionDivider</name>
+                    <value>81167069</value>
+                </property>
+                <property>
+                    <name>summaryGenerator</name>
+                    <value>StepSummaryGenerator</value>
+                </property>
+                <property>
+                    <name>ctlQaEntityId</name>
+                    <value>73510206</value>
+                </property>
+                <property>
+                    <name>samplePercent</name>
+                    <value>0.01</value>
+                </property>
+            </configuration>
+        </sub-workflow>
+        <ok to="TablesJoin"/>
+        <error to="TablesJoin"/>
+    </action>
+    <join name="TablesJoin" to="errorCheck"/>
+
+    <decision name="errorCheck">
+        <switch>
+            <case to="kill">${not empty wf:lastErrorNode()}</case>
+            <default to="end"/>
+        </switch>
+    </decision>
+
+    <kill name="kill">
+        <message>error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+
+    <end name="end"/>
+
+</workflow-app>
